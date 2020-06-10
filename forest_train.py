@@ -6,7 +6,7 @@ from sklearn.ensemble import RandomForestRegressor
 from sklearn.model_selection import train_test_split
 import pickle
 
-from utils import metric
+from utils import numpy_metric
 
 root_path = '/home/nvme/Kaggle/trends-assessment-prediction'
 
@@ -40,7 +40,7 @@ print('\nValidation RMSE')
 print(np.sqrt(np.mean((out_val - y_val) ** 2)))
 
 print('\nValidation Metric')
-print(metric(y_val, out_val))
+print(numpy_metric(out_val, y_val))
 
 print('\nValidation R^2')
 print(model.score(x_val, y_val))
