@@ -1,4 +1,7 @@
 # Trains a basic neural network on both the fnc and the loadings
+# This achieves score of 0.1649 on validation set with ensemble size of 10
+from argparse import ArgumentParser
+import copy
 import pandas as pd
 import numpy as np
 from sklearn.ensemble import RandomForestRegressor
@@ -19,20 +22,22 @@ from pytorch_lightning.callbacks import ModelCheckpoint
 from utils import torch_metric
 
 class Model(LightningModule):
-    def __init__(self, batch_size=128, lr=3e-4, input_dim=1404, n_networks=10):
+    def __init__(self, batch_size=128, lr=3e-4, input_dim=1404, n_networks=100):
         super().__init__()
         self.batch_size = batch_size
         self.lr = lr
         def make_network():
-            return nn.Sequential(nn.Linear(input_dim, 256),
+            return nn.Sequential(nn.Linear(input_dim, 128),
                                  nn.LeakyReLU(),
-                                 nn.Dropout(0.5),
-                                 nn.Linear(256, 256),
+                                 nn.Linear(128, 128),
                                  nn.LeakyReLU(),
-                                 nn.Dropout(0.5),
-                                 nn.Linear(256, 5))
+                                 nn.Linear(128, 5))
 
         self.networks = nn.ModuleList([make_network() for i in range(n_networks)])
+
+        self.initial_parameters = nn.ParameterList([copy.deepcopy(p) for p in self.parameters()])
+        for p in self.initial_parameters:
+            p.requires_grad = False
 
     def forward(self, x):
         return [n(x) for n in self.networks]
@@ -84,13 +89,15 @@ class Model(LightningModule):
     def training_step(self, batch, batch_idx):
         x, y = batch
         out = self(x)
-        loss = torch.sum(torch.stack([torch_metric(o, y) for o in out], axis=0))
+        loss = torch.stack([torch_metric(o, y) for o in out], dim=0).sum()
+        l2_reg = 1e-3 * torch.sum(torch.stack([torch.sum((p - p_old) ** 2) for p, p_old in zip(self.parameters(), self.initial_parameters)], dim=0))
+        loss = loss + l2_reg
         logs = {'train_loss': loss}
         return {'loss': loss, 'log': logs}
 
     def validation_step(self, batch, batch_idx):
         x, y = batch
-        out = torch.mean(torch.stack(self(x), axis=0), axis=0)
+        out = torch.stack(self(x), dim=0).mean(dim=0)
         loss = torch_metric(out, y)
         return {'val_loss': loss}
 
@@ -99,9 +106,14 @@ class Model(LightningModule):
         logs = {'val_loss': avg_loss}
         return {'val_loss': avg_loss, 'log': logs}
 
+argument_parser = ArgumentParser(add_help=False)
+argument_parser.add_argument('--gpu', type=int, default=0, help='which gpu')
+argument_parser.add_argument('--precision', type=int, default=32, help='model precision')
+args = argument_parser.parse_args()
+
 
 logger = TensorBoardLogger("tb_logs", name="nn_fnc_loadings")
 checkpoint_callback = ModelCheckpoint(filepath='./nn_fnc_loadings/', save_top_k=1, verbose=True, monitor='val_loss', mode='min', prefix='')
-trainer = pl.Trainer(max_epochs=200, gpus=[0], distributed_backend='dp', precision=32, logger=logger, checkpoint_callback=checkpoint_callback)
+trainer = pl.Trainer(max_epochs=100, gpus=[args.gpu], distributed_backend='dp', precision=args.precision, logger=logger, checkpoint_callback=checkpoint_callback)
 model = Model()
 trainer.fit(model)

@@ -1,4 +1,5 @@
 # Trains a basic neural network on both the fnc and the loadings
+import copy
 import pandas as pd
 import numpy as np
 from sklearn.ensemble import RandomForestRegressor
@@ -28,27 +29,30 @@ sample_submission = pd.read_csv(f'{root_path}/sample_submission.csv', index_col=
 
 x = pd.concat([loadings, fnc], axis=1)
 x = x[~x.index.isin(train_scores.index)]
+x = (x - x.mean()) / (x.std() + 1e-3)
 
-model_path = f'./nn_fnc_loadings/epoch=198.ckpt'
+model_path = f'./nn_fnc_loadings/_ckpt_epoch_97.ckpt'
 
 class Model(LightningModule):
-    def __init__(self, batch_size=128, lr=3e-4, input_dim=1404, n_networks=10):
+    def __init__(self, batch_size=128, lr=3e-4, input_dim=1404, n_networks=100):
         super().__init__()
         self.batch_size = batch_size
         self.lr = lr
         def make_network():
-            return nn.Sequential(nn.Linear(input_dim, 256),
+            return nn.Sequential(nn.Linear(input_dim, 128),
                                  nn.LeakyReLU(),
-                                 nn.Dropout(0.5),
-                                 nn.Linear(256, 256),
+                                 nn.Linear(128, 128),
                                  nn.LeakyReLU(),
-                                 nn.Dropout(0.5),
-                                 nn.Linear(256, 5))
+                                 nn.Linear(128, 5))
 
         self.networks = nn.ModuleList([make_network() for i in range(n_networks)])
 
+        self.initial_parameters = nn.ParameterList([copy.deepcopy(p) for p in self.parameters()])
+        for p in self.initial_parameters:
+            p.requires_grad = False
+
     def forward(self, x):
-        return torch.mean(torch.stack([n(x) for n in self.networks], axis=0), axis=0)
+        return torch.mean(torch.stack([n(x) for n in self.networks], dim=0), dim=0)
 
 model = Model.load_from_checkpoint(model_path).cuda(0)
 
