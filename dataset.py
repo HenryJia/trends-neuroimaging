@@ -10,10 +10,6 @@ import torch
 from torch.utils.data import Dataset
 from torch.utils.data import DataLoader
 
-class NormaliseImage:
-    def __call__(self, x):
-        return (x - x.mean((1, 2, 3))) / (x.std((1, 2, 3)) + 1e-3)
-
 class NeuroimagingDataset(Dataset):
     def __init__(self, root_path, ids, loadings=None, fnc=None, train_scores=None, transforms=None):
         self.root_path = root_path
@@ -89,7 +85,7 @@ class AsynchronousLoader(object):
         Any additional arguments to pass to the dataloader if we're constructing one here
     """
 
-    def __init__(self, data, device=torch.device('cuda', 0), q_size=10, num_batches=None, **kwargs):
+    def __init__(self, data, device=torch.device('cuda', 0), q_size=10, num_batches=None, dtype=None, **kwargs):
         if isinstance(data, torch.utils.data.DataLoader):
             self.dataloader = data
         else:
@@ -104,6 +100,7 @@ class AsynchronousLoader(object):
 
         self.device = device
         self.q_size = q_size
+        self.dtype = dtype
 
         self.load_stream = torch.cuda.Stream(device=device)
         self.queue = Queue(maxsize=self.q_size)
@@ -123,7 +120,10 @@ class AsynchronousLoader(object):
                 # Can only do asynchronous transfer if we use pin_memory
                 if not sample.is_pinned():
                     sample = sample.pin_memory()
-                return sample.to(self.device, non_blocking=True)
+                if self.dtype:
+                    return sample.to(self.device, non_blocking=True, dtype=self.dtype)
+                else:
+                    return sample.to(self.device, non_blocking=True)
         else:
             return [self.load_instance(s) for s in sample]
 

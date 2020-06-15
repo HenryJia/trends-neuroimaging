@@ -13,23 +13,24 @@ import matplotlib.pyplot as plt
 
 from tqdm import tqdm
 
-from dataset import NeuroimagingDataset, NormaliseImage
+from dataset import NeuroimagingDataset
 
 root_path = f'/home/nvme/Kaggle/trends-assessment-prediction'
 train_scores = pd.read_csv(f'{root_path}/train_scores.csv', index_col='Id')
 train_scores = train_scores.fillna(train_scores.mean())
 
-train_set = NeuroimagingDataset(root_path, ids=train_scores.index.to_numpy(), train_scores=train_scores, transforms=NormaliseImage())
+train_set = NeuroimagingDataset(root_path, ids=train_scores.index.to_numpy(), train_scores=train_scores)
 #train_loader = DataLoader(train_set, batch_size=16, shuffle=True,  pin_memory=True, num_workers=0)
 
-#t0 = time.time()
-#n = len(train_set)
-#for i in tqdm(range(n)):
-    #niimg, scores = train_set[i]
-    #assert not torch.isnan(niimg).any()
-    #assert not torch.isnan(scores).any()
+t0 = time.time()
+n = len(train_set)
+for i in tqdm(range(n)):
+    niimg, scores = train_set[i]
+    assert not torch.isnan(niimg).any()
+    assert not torch.isnan(scores).any()
+    exit()
 
-#print(type(niimg), type(scores))
+print(type(niimg), type(scores))
 
 #t1 = time.time()
 #print('Time per image', (t1 - t0) / n)

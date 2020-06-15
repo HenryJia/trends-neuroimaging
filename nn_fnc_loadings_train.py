@@ -80,7 +80,7 @@ class Model(LightningModule):
 
     def train_dataloader(self):
         #log.info('Training data loader called.')
-        return DataLoader(self.train_set, batch_size=self.batch_size, num_workers=4)
+        return DataLoader(self.train_set, batch_size=self.batch_size, num_workers=4, shuffle=True)
 
     def val_dataloader(self):
         #log.info('Validation data loader called.')
