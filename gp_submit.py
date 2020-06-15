@@ -21,13 +21,11 @@ x = x[~x.index.isin(train_scores.index)]
 save_dict = pickle.load(open('gp_loadings.sklearn', 'rb'))
 model = save_dict['model']
 x_mean, x_std = save_dict['x_mean'], save_dict['x_std']
-y_mean, y_std = save_dict['y_mean'], save_dict['y_std']
 
 x = (x - x_mean) / (x_std + 1e-3)
 
 # Why bother trying to format t hings when we can jsut sequentially fill it in
 out = model.predict(x)
-out = out * y_std.to_numpy() + y_mean.to_numpy()
 
 out = out.flatten().tolist()
 for i, o in enumerate(out):
