@@ -20,7 +20,9 @@ x = x[~x.index.isin(train_scores.index)]
 
 save_dict = pickle.load(open('gp_loadings.sklearn', 'rb'))
 model = save_dict['model']
-x_mean, x_std = save_dict['x_mean'], save_dict['x_std']
+#x_mean, x_std = save_dict['x_mean'], save_dict['x_std']
+x_mean = x.mean()
+x_std = x.std()
 
 x = (x - x_mean) / (x_std + 1e-3)
 

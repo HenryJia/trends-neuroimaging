@@ -4,7 +4,7 @@ from multiprocessing import Pool
 import pandas as pd
 import numpy as np
 from sklearn.gaussian_process import GaussianProcessRegressor
-from sklearn.gaussian_process.kernels import RBF, Matern, RationalQuadratic, DotProduct, WhiteKernel
+from sklearn.gaussian_process.kernels import RBF, Matern, RationalQuadratic, DotProduct, WhiteKernel, ExpSineSquared
 from sklearn.model_selection import train_test_split, KFold
 import pickle
 
@@ -45,7 +45,7 @@ def fit(split=None):
     if split:
         x_val = (x_val - x_mean) / (x_std + 1e-3)
 
-    model = GaussianProcessRegressor(kernel=1.0 * RationalQuadratic(1.0, 1.0) + 1.0 * DotProduct(1.0) + 1.0 * WhiteKernel(1.0), normalize_y=True)
+    model = GaussianProcessRegressor(kernel=1.0 * RationalQuadratic(1.0, 1.0) + 1.0 * DotProduct(1.0) + 1.0 * WhiteKernel(1.0), alpha=1e-4, normalize_y=True)
     model.fit(x_train, y_train)
 
     if split:
