@@ -27,8 +27,8 @@ train_scores = train_scores.fillna(train_scores.mean())
 
 #x = pd.concat([loadings, fnc], axis=1)
 x = loadings
-x = x[x.index.isin(train_scores.index)].to_numpy()
-y = train_scores.to_numpy()
+x = x[x.index.isin(train_scores.index)].to_numpy().astype(np.float32)
+y = train_scores.to_numpy().astype(np.float32)
 
 def fit(split=None):
     global x, y
@@ -50,33 +50,28 @@ def fit(split=None):
 
     if split:
         out_val = model.predict(x_val)
-        return np.sqrt(np.mean((out_val - y_val) ** 2, axis=0)), numpy_metric(out_val, y_val), model.score(x_val, y_val), model
+        return model, out_val
     else:
-        return model, x_mean, x_std
+        return model
 
-kf = KFold(n_splits=5, random_state=94103, shuffle=True)
+kf = KFold(n_splits=5, shuffle=False)
 splits = list(kf.split(x)) + [None]
 p = Pool(len(splits) + 1)
 results = p.map(fit, splits)
-model, x_mean, x_std = results[-1]
+model = results[-1]
 
-rmse = np.mean([r[0] for r in results[:-1]], axis=0)
-metric = np.mean([r[1] for r in results[:-1]], axis=0)
-r2 = np.mean([r[2] for r in results[:-1]], axis=0)
+out_val = np.concatenate([r[1] for r in results[:-1]], axis=0)
 
 print('\nValidation stddev')
 print(y.std(axis=0))
 
 print('\nValidation RMSE')
-print(rmse)
+print(np.sqrt(np.mean((out_val - y) ** 2, axis=0)))
 
 print('\nValidation Metric')
-print(metric)
-
-print('\nValidation R^2')
-print(r2)
+print(numpy_metric(out_val, y))
 
 print('\nPosterior Kernel')
 print(model.kernel_)
 
-pickle.dump({'x_mean': x_mean, 'x_std': x_std, 'model': model}, open('gp_loadings.sklearn', 'wb'))
+pickle.dump(model, open('gp_loadings.sklearn', 'wb'))

@@ -28,7 +28,7 @@ x = x[x.index.isin(train_scores.index)]
 
 x_train, x_val, y_train, y_val = train_test_split(x, train_scores, test_size=0.1)
 
-model = RandomForestRegressor(n_estimators=400, n_jobs=15, verbose=1)
+model = RandomForestRegressor(n_estimators=200, n_jobs=15, verbose=1)
 model.fit(x_train, y_train)
 
 out_val = model.predict(x_val)

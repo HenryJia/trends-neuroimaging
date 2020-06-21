@@ -26,7 +26,7 @@ x_std = x.std()
 
 x = (x - x_mean) / (x_std + 1e-3)
 
-# Why bother trying to format t hings when we can jsut sequentially fill it in
+# Why bother trying to format things when we can jsut sequentially fill it in
 out = model.predict(x)
 print(out)
 
