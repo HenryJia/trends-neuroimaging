@@ -25,6 +25,8 @@ loadings = loadings.fillna(loadings.mean())
 fnc = fnc.fillna(fnc.mean())
 train_scores = train_scores.fillna(train_scores.mean())
 
+loadings = pd.concat([loadings, (1.0 / 500.0) * fnc], axis=1)
+
 x = loadings[loadings.index.isin(train_scores.index)].to_numpy().astype(np.float32)
 y = train_scores.to_numpy().astype(np.float32)
 
@@ -72,7 +74,7 @@ out_val = np.concatenate(out_val, axis=0)
 model = [SVR(kernel='rbf', C=100, verbose=True), SVR(kernel='rbf', C=10, verbose=True), SVR(kernel='rbf', C=10, verbose=True), SVR(kernel='rbf', C=10, verbose=True), SVR(kernel='rbf', C=10, verbose=True)]
 model = MultiModel(model)
 
-model.fit_async(p, x_train, y_train, blocking=True)
+model.fit_async(p, x, y, blocking=True)
 
 print('\nStddev')
 print(y.std(axis=0))
