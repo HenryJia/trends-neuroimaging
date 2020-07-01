@@ -9,7 +9,6 @@ from sklearn.svm import SVR
 
 from tqdm import tqdm
 
-from utils import numpy_metric
 
 root_path = '/home/nvme/Kaggle/trends-assessment-prediction'
 
@@ -31,7 +30,7 @@ loadings = pd.concat([loadings, (1.0 / 500.0) * fnc], axis=1)
 x = loadings[loadings.index.isin(train_scores.index)].astype(np.float32)
 y = train_scores.astype(np.float32)
 
-def numpy_scorer(y_true, y_pred): # Note for sklearn y_true, y_pred are in opposite order to utils.py which uses the PyTorch convention
+def numpy_scorer(y_true, y_pred):
     return np.sum(np.abs(y_true - y_pred), axis=0)/np.sum(y_true, axis=0)
 
 scorer = make_scorer(numpy_scorer, greater_is_better=False)
@@ -70,4 +69,4 @@ for i, o in enumerate(out_test):
 
 print(sample_submission)
 
-sample_submission.to_csv('svm_loadings_submission.csv')
+sample_submission.to_csv('svm_submission.csv')
